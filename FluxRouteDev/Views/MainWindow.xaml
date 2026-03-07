@@ -1,0 +1,189 @@
+<Window x:Class="FluxRoute.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="FluxRoute"
+        Height="520" Width="420"
+        WindowStartupLocation="CenterScreen"
+        Background="#1E1E1E"
+        ResizeMode="CanMinimize">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="60"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#252526">
+            <Grid Margin="15,0">
+                <TextBlock Text="🔷 FluxRoute" FontSize="22" FontWeight="Bold"
+                           Foreground="White" VerticalAlignment="Center"/>
+                <Button Width="35" Height="35" HorizontalAlignment="Right" VerticalAlignment="Center"
+                        Command="{Binding ToggleSettingsCommand}"
+                        Background="Transparent" BorderBrush="Transparent"
+                        Foreground="White" FontSize="18" Cursor="Hand" Content="⚙️">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <ContentPresenter/>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Opacity" Value="0.7"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- Main Content -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="25,20">
+
+                <!-- Big Action Button -->
+                <Button Height="70" FontSize="20" FontWeight="Bold"
+                        Command="{Binding MainActionCommand}"
+                        Margin="0,0,0,15"
+                        Foreground="White" BorderThickness="0">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Cursor" Value="Hand"/>
+                            <Setter Property="Background" Value="#27AE60"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}" CornerRadius="12">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsRunning}" Value="True">
+                                    <Setter Property="Background" Value="#C0392B"/>
+                                </DataTrigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Opacity" Value="0.9"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                    <TextBlock Text="{Binding MainActionButtonText}" FontSize="20" FontWeight="Bold"/>
+                </Button>
+
+                <!-- Active status label -->
+                <TextBlock Text="Защита активна ✓"
+                           Foreground="#4CAF50" FontSize="14" FontWeight="SemiBold"
+                           HorizontalAlignment="Center" Margin="0,0,0,25"
+                           Visibility="{Binding IsRunning, Converter={StaticResource BoolToVisConverter}}"/>
+
+                <!-- Separator -->
+                <Rectangle Height="1" Fill="#3E3E42" Margin="0,0,0,20"/>
+
+                <!-- Stats Block -->
+                <StackPanel Margin="0,0,0,25">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                        <TextBlock Text="🔹" FontSize="16" Margin="0,0,8,0"/>
+                        <TextBlock Text="Стратегия: " Foreground="#AAAAAA" FontSize="15"/>
+                        <TextBlock Text="{Binding CurrentStrategy}" Foreground="White" FontWeight="Bold" FontSize="15"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                        <TextBlock Text="🔹" FontSize="16" Margin="0,0,8,0"/>
+                        <TextBlock Text="Статус: " Foreground="#AAAAAA" FontSize="15"/>
+                        <TextBlock Foreground="White" FontSize="15" FontWeight="Bold">
+                            <Run Text="{Binding StatusText}"/>
+                        </TextBlock>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="🔹" FontSize="16" Margin="0,0,8,0"/>
+                        <TextBlock Text="Uptime: " Foreground="#AAAAAA" FontSize="15"/>
+                        <TextBlock Text="{Binding UptimeText}" Foreground="White" FontSize="15" FontWeight="Bold"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Footer Actions -->
+                <Grid Margin="0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Button Grid.Column="0" HorizontalAlignment="Left"
+                            Background="Transparent" Foreground="#AAAAAA" BorderThickness="0"
+                            FontSize="13" Cursor="Hand"
+                            Command="{Binding ToggleLogsCommand}">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Content" Value="▼ Показать логи"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <ContentPresenter/>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsLogsVisible}" Value="True">
+                                        <Setter Property="Content" Value="▲ Скрыть логи"/>
+                                    </DataTrigger>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Foreground" Value="White"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <Button Grid.Column="1" HorizontalAlignment="Right"
+                            Background="#2D2D30" Foreground="White" BorderThickness="0"
+                            Padding="15,8" FontSize="13" Cursor="Hand"
+                            Command="{Binding ToggleSettingsCommand}">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Content" Value="⚙ Настройки"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#3E3E42"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </Grid>
+
+                <!-- Collapsible Logs -->
+                <ItemsControl ItemsSource="{Binding RecentLogs}"
+                              Margin="0,15,0,0"
+                              Visibility="{Binding IsLogsVisible, Converter={StaticResource BoolToVisConverter}}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" Foreground="#888888"
+                                       Margin="0,4" FontFamily="Consolas" FontSize="11"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Window>
