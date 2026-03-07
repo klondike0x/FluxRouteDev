@@ -15,6 +15,12 @@ $needStashPop = $false
 # Всегда работаем из папки скрипта (важно при запуске из другой директории)
 Set-Location -Path $PSScriptRoot
 
+=======
+    [switch]$NoPull                     # Если true — не делать pull
+)
+
+$needStashPop = $false
+
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  🔷 FluxRoute — Dev Runner" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
@@ -101,4 +107,6 @@ Write-Host "  (Нажмите Ctrl+C для остановки)" -ForegroundColo
 Write-Host ""
 
 dotnet run --project $ProjectPath --no-build
+
 exit $LASTEXITCODE
+=======
