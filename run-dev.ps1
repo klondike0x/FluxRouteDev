@@ -1,3 +1,6 @@
+# Запуск в PowerShell: .\run-dev.ps1 (или .\run-dev.cmd)
+# Без префикса .\ PowerShell может не найти скрипт в текущей папке.
+
 # run-dev.ps1
 param(
     [string]$Branch = "main",           # Ветка по умолчанию
