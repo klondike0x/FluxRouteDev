@@ -27,3 +27,18 @@
 - `run-dev.ps1` без `./` / `.\` в PowerShell обычно не ищется в текущей директории.
 - На некоторых системах запуск `.ps1` дополнительно блокируется политикой выполнения (`ExecutionPolicy`).
 - `run-dev.cmd` запускает PowerShell с `-ExecutionPolicy Bypass` только для текущего процесса и не меняет глобальные настройки системы.
+
+Если при запуске `run-dev.ps1` появляется ошибка про `ExecutionPolicy` (UnauthorizedAccess),
+используйте обёртку:
+
+```bat
+run-dev.cmd
+```
+
+Дополнительно можно передать те же аргументы, что и в PowerShell-скрипт:
+
+```bat
+run-dev.cmd -Branch main -NoPull
+```
+
+`run-dev.cmd` запускает PowerShell с `-ExecutionPolicy Bypass` только для текущего процесса, не меняя глобальную политику системы.
