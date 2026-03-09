@@ -73,6 +73,19 @@ dotnet build
 
 ---
 
+## 🙏 Благодарности
+
+Отдельное спасибо авторам проектов, которые вдохновили на создание FluxRoute Desktop:
+
+- [**Zapret-GUI**](https://github.com/medvedeff-true/Zapret-GUI) by medvedeff-true
+- [**ZapretControl**](https://github.com/Virenbar/ZapretControl) by Virenbar
+- [**zapret**](https://github.com/youtubediscord/zapret) by youtubediscord
+- [**zapret**](https://github.com/bol-van/zapret) by bol-van — оригинальный zapret, основа всего
+- [**WinSW**](https://github.com/winsw/winsw) by winsw — запуск приложений как Windows-служб
+- [**zapret-discord-youtube**](https://github.com/Flowseal/zapret-discord-youtube) by Flowseal — основа engine
+
+---
+
 ## 📄 Лицензия
 
 GNU General Public License v3.0 — см. [LICENSE](LICENSE.txt)
