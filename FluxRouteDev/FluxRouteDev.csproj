@@ -6,12 +6,18 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+	<Version>1.0.1</Version>
+    <ApplicationIcon>FluxRoute.ico</ApplicationIcon>
   </PropertyGroup>
 
 	<ItemGroup>
 		<Content Include="engine\**\*">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Include="FluxRoute.ico" />
 	</ItemGroup>
 
   <ItemGroup>
