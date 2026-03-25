@@ -19,8 +19,9 @@ public sealed partial class UpdaterService
         "https://raw.githubusercontent.com/Flowseal/zapret-discord-youtube/main/.service/version.txt";
 
     // Шаблон ссылки на ZIP-архив релиза (скачивание release asset — тоже без API лимита)
+    // Тег и имя файла у Flowseal БЕЗ префикса 'v': /download/1.9.7b/zapret-discord-youtube-1.9.7b.zip
     private const string ZipUrlTemplate =
-        "https://github.com/Flowseal/zapret-discord-youtube/releases/download/v{0}/zapret-discord-youtube-v{0}.zip";
+        "https://github.com/Flowseal/zapret-discord-youtube/releases/download/{0}/zapret-discord-youtube-{0}.zip";
 
     private const string VersionFile = "version.txt";
 
