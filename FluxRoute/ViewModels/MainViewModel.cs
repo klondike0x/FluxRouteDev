@@ -133,8 +133,46 @@ public partial class MainViewModel : ObservableObject
     // ── Сервис ──
     [ObservableProperty] private bool gameFilterEnabled;
     [ObservableProperty] private string gameFilterProtocol = "TCP и UDP";
-    partial void OnGameFilterProtocolChanged(string value) => SaveSettings();
+    partial void OnGameFilterProtocolChanged(string value)
+    {
+        SaveSettings();
+        if (GameFilterEnabled && _settingsLoaded)
+        {
+            try
+            {
+                var utilsDir = Path.GetDirectoryName(GameFilterFlagPath)!;
+                Directory.CreateDirectory(utilsDir);
+                File.WriteAllText(GameFilterFlagPath, ProtocolToFileValue(value));
+                AddServiceLog($"🎮 Game Filter протокол изменён на {value}");
+            }
+            catch (Exception ex)
+            {
+                AddServiceLog($"❌ Ошибка обновления Game Filter: {ex.Message}");
+            }
+        }
+    }
     public List<string> GameFilterProtocols { get; } = ["TCP и UDP", "TCP", "UDP"];
+
+    private static readonly Dictionary<string, string> _protocolToFile = new()
+    {
+        ["TCP и UDP"] = "all",
+        ["TCP"] = "tcp",
+        ["UDP"] = "udp"
+    };
+
+    private static readonly Dictionary<string, string> _fileToProtocol = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["all"] = "TCP и UDP",
+        ["tcp"] = "TCP",
+        ["udp"] = "UDP"
+    };
+
+    private string ProtocolToFileValue(string protocol) =>
+        _protocolToFile.TryGetValue(protocol, out var v) ? v : "udp";
+
+    private string FileValueToProtocol(string fileValue) =>
+        _fileToProtocol.TryGetValue(fileValue, out var v) ? v : "UDP";
+
     [ObservableProperty] private string ipSetMode = "—";
     [ObservableProperty] private string zapretServiceStatus = "—";
     [ObservableProperty] private bool isServiceBusy;
@@ -859,8 +897,7 @@ public partial class MainViewModel : ObservableObject
             try
             {
                 var content = File.ReadAllText(GameFilterFlagPath).Trim();
-                if (GameFilterProtocols.Contains(content))
-                    GameFilterProtocol = content;
+                GameFilterProtocol = FileValueToProtocol(content);
             }
             catch { }
         }
@@ -936,7 +973,7 @@ public partial class MainViewModel : ObservableObject
             }
             else
             {
-                File.WriteAllText(GameFilterFlagPath, GameFilterProtocol);
+                File.WriteAllText(GameFilterFlagPath, ProtocolToFileValue(GameFilterProtocol));
                 GameFilterEnabled = true;
                 AddServiceLog($"🎮 Game Filter включён ({GameFilterProtocol})");
                 Logs.Add($"Game Filter включён ({GameFilterProtocol})");
