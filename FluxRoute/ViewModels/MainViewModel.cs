@@ -718,38 +718,17 @@ public partial class MainViewModel : ObservableObject
 
         try
         {
-            // Используем CheckForUpdateAsync с несуществующей версией чтобы всегда получить ссылку
-            var url = "https://api.github.com/repos/Flowseal/zapret-discord-youtube/releases/latest";
-            using var http = new System.Net.Http.HttpClient();
-            http.DefaultRequestHeaders.Add("User-Agent", "FluxRoute-Updater");
-            var json = await http.GetStringAsync(url);
-            using var doc = System.Text.Json.JsonDocument.Parse(json);
-            var root = doc.RootElement;
-
-            var tag = root.GetProperty("tag_name").GetString() ?? "unknown";
-            string? downloadUrl = null;
-            foreach (var asset in root.GetProperty("assets").EnumerateArray())
-            {
-                var name = asset.GetProperty("name").GetString() ?? "";
-                if (name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
-                {
-                    downloadUrl = asset.GetProperty("browser_download_url").GetString();
-                    break;
-                }
-            }
-
-            if (downloadUrl is null)
+            var (update, error) = await _updater.GetLatestReleaseAsync();
+            if (update is null)
             {
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    EngineDownloadStatus = "❌ Не удалось найти архив для скачивания";
-                    Logs.Add("❌ Flowseal: архив не найден в последнем релизе");
+                    EngineDownloadStatus = $"❌ {error ?? "Не удалось получить информацию о релизе"}";
+                    Logs.Add($"❌ Flowseal: {error ?? "неизвестная ошибка"}");
                     IsDownloadingEngine = false;
                 });
                 return;
             }
-
-            var update = new UpdateInfo { Version = tag, DownloadUrl = downloadUrl };
 
             var success = await _updater.InstallUpdateAsync(EngineDir, update,
                 msg => Application.Current.Dispatcher.Invoke(() =>
@@ -763,9 +742,9 @@ public partial class MainViewModel : ObservableObject
                 if (success)
                 {
                     CurrentEngineVersion = _updater.GetLocalVersion(EngineDir);
-                    EngineDownloadStatus = $"✅ Flowseal {tag} установлен!";
-                    Logs.Add($"✅ Flowseal {tag} установлен автоматически");
-                    AddToRecentLogs($"✅ Flowseal {tag} установлен");
+                    EngineDownloadStatus = $"✅ Flowseal {update.Version} установлен!";
+                    Logs.Add($"✅ Flowseal {update.Version} установлен автоматически");
+                    AddToRecentLogs($"✅ Flowseal {update.Version} установлен");
                     LoadProfiles();
                     RefreshDiagnostics();
                 }

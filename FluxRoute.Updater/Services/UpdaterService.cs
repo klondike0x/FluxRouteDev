@@ -1,8 +1,7 @@
 ﻿using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace FluxRoute.Updater.Services;
 
@@ -13,30 +12,55 @@ public sealed class UpdateInfo
     public string ReleaseNotes { get; init; } = "";
 }
 
-public sealed class UpdaterService
+public sealed partial class UpdaterService
 {
-    private const string Owner = "Flowseal";
-    private const string Repo = "zapret-discord-youtube";
+    // Flowseal хранит актуальную версию здесь — raw-файл, НЕ GitHub REST API (без лимита 60/час)
+    private const string RemoteVersionUrl =
+        "https://raw.githubusercontent.com/Flowseal/zapret-discord-youtube/main/.service/version.txt";
+
+    // Шаблон ссылки на ZIP-архив релиза (скачивание release asset — тоже без API лимита)
+    private const string ZipUrlTemplate =
+        "https://github.com/Flowseal/zapret-discord-youtube/releases/download/v{0}/zapret-discord-youtube-v{0}.zip";
+
     private const string VersionFile = "version.txt";
 
-    private static readonly HttpClient _http = new();
-
-    // ETag-кэш для conditional requests (не тратят rate limit)
-    private string? _cachedETag;
-    private string? _cachedResponseBody;
+    private static readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(15) };
 
     static UpdaterService()
     {
         _http.DefaultRequestHeaders.Add("User-Agent", "FluxRoute-Updater");
     }
 
+    [GeneratedRegex(@"^set\s+""?LOCAL_VERSION=([^""]+)""?", RegexOptions.IgnoreCase)]
+    private static partial Regex LocalVersionRegex();
+
     /// <summary>Нормализует версию: убирает префикс 'v', пробелы, приводит к lower</summary>
     private static string NormalizeVersion(string version)
         => version.Trim().TrimStart('v', 'V').Trim().ToLowerInvariant();
 
-    /// <summary>Читает текущую версию из engine/version.txt</summary>
+    /// <summary>
+    /// Читает текущую версию — сначала LOCAL_VERSION из service.bat,
+    /// затем engine/version.txt как fallback
+    /// </summary>
     public string GetLocalVersion(string engineDir)
     {
+        // Приоритет: LOCAL_VERSION из service.bat (как делает Zapret-GUI)
+        var serviceBat = Path.Combine(engineDir, "service.bat");
+        if (File.Exists(serviceBat))
+        {
+            try
+            {
+                foreach (var line in File.ReadLines(serviceBat))
+                {
+                    var match = LocalVersionRegex().Match(line);
+                    if (match.Success)
+                        return NormalizeVersion(match.Groups[1].Value);
+                }
+            }
+            catch { /* fallback ниже */ }
+        }
+
+        // Fallback: version.txt
         var path = Path.Combine(engineDir, VersionFile);
         return File.Exists(path) ? NormalizeVersion(File.ReadAllText(path)) : "unknown";
     }
@@ -47,64 +71,45 @@ public sealed class UpdaterService
         File.WriteAllText(Path.Combine(engineDir, VersionFile), NormalizeVersion(version));
     }
 
-    /// <summary>Проверяет последний релиз на GitHub</summary>
+    /// <summary>
+    /// Проверяет обновление через raw.githubusercontent.com — без API лимитов.
+    /// Читает .service/version.txt из репозитория Flowseal.
+    /// </summary>
     public async Task<(UpdateInfo? update, string? error)> CheckForUpdateAsync(string engineDir, CancellationToken ct = default)
     {
         var (release, error) = await GetLatestReleaseAsync(ct);
         if (release is null) return (null, error);
 
         var local = GetLocalVersion(engineDir);
-        if (local == NormalizeVersion(release.Version)) return (null, null); // уже актуально
+        if (local == NormalizeVersion(release.Version)) return (null, null);
 
         return (release, null);
     }
 
-    /// <summary>Получает последний релиз без сравнения версий (для принудительного обновления)</summary>
+    /// <summary>
+    /// Получает информацию о последнем релизе Flowseal.
+    /// Версия — из raw.githubusercontent.com/.service/version.txt (без лимита).
+    /// ZIP-ссылка — по шаблону (скачивание release asset, тоже без лимита).
+    /// </summary>
     public async Task<(UpdateInfo? update, string? error)> GetLatestReleaseAsync(CancellationToken ct = default)
     {
         try
         {
-            var url = $"https://api.github.com/repos/{Owner}/{Repo}/releases/latest";
-            using var request = new HttpRequestMessage(HttpMethod.Get, url);
-            // Conditional request — если ETag не изменился, GitHub вернёт 304 (не тратит rate limit)
-            if (_cachedETag is not null)
-                request.Headers.IfNoneMatch.Add(new EntityTagHeaderValue(_cachedETag));
+            // Один GET к статическому файлу — не тратит API rate limit
+            var raw = await _http.GetStringAsync(RemoteVersionUrl, ct);
+            var remoteVersion = raw.Trim();
 
-            var response = await _http.SendAsync(request, ct);
+            if (string.IsNullOrWhiteSpace(remoteVersion))
+                return (null, "Пустая версия в .service/version.txt");
 
-            // 304 Not Modified — используем кэшированный ответ
-            if (response.StatusCode == System.Net.HttpStatusCode.NotModified && _cachedResponseBody is not null)
+            var zipUrl = string.Format(ZipUrlTemplate, remoteVersion);
+
+            return (new UpdateInfo
             {
-                return ParseRelease(_cachedResponseBody);
-            }
-
-            var json = await response.Content.ReadAsStringAsync(ct);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                // Парсим сообщение об ошибке от GitHub
-                try
-                {
-                    using var errDoc = JsonDocument.Parse(json);
-                    var msg = errDoc.RootElement.GetProperty("message").GetString() ?? "";
-                    if (msg.Contains("rate limit", StringComparison.OrdinalIgnoreCase))
-                        return (null, "GitHub API: превышен лимит запросов (60/час). Подождите ~час и попробуйте снова.");
-                    return (null, $"GitHub API: {msg}");
-                }
-                catch
-                {
-                    return (null, $"GitHub API: HTTP {(int)response.StatusCode}");
-                }
-            }
-
-            // Сохраняем ETag для будущих conditional requests
-            if (response.Headers.ETag?.Tag is { } etag)
-            {
-                _cachedETag = etag;
-                _cachedResponseBody = json;
-            }
-
-            return ParseRelease(json);
+                Version = remoteVersion,
+                DownloadUrl = zipUrl,
+                ReleaseNotes = ""
+            }, null);
         }
         catch (HttpRequestException ex)
         {
@@ -112,43 +117,12 @@ public sealed class UpdaterService
         }
         catch (TaskCanceledException)
         {
-            return (null, "Таймаут запроса к GitHub");
+            return (null, "Таймаут запроса");
         }
         catch (Exception ex)
         {
             return (null, $"Ошибка: {ex.Message}");
         }
-    }
-
-    /// <summary>Парсит JSON-ответ релиза GitHub</summary>
-    private static (UpdateInfo? update, string? error) ParseRelease(string json)
-    {
-        using var doc = JsonDocument.Parse(json);
-        var root = doc.RootElement;
-
-        var tag = root.GetProperty("tag_name").GetString() ?? "";
-        var body = root.GetProperty("body").GetString() ?? "";
-
-        // Ищем .zip ассет
-        string? downloadUrl = null;
-        foreach (var asset in root.GetProperty("assets").EnumerateArray())
-        {
-            var name = asset.GetProperty("name").GetString() ?? "";
-            if (name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
-            {
-                downloadUrl = asset.GetProperty("browser_download_url").GetString();
-                break;
-            }
-        }
-
-        if (downloadUrl is null) return (null, "В релизе нет .zip архива");
-
-        return (new UpdateInfo
-        {
-            Version = tag,
-            DownloadUrl = downloadUrl,
-            ReleaseNotes = body.Length > 500 ? body[..500] + "..." : body
-        }, null);
     }
 
     /// <summary>Скачивает и устанавливает обновление</summary>
