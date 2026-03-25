@@ -29,6 +29,9 @@ public sealed class AppSettings
     // Системные
     public bool AutoStartEnabled { get; set; } = false;
     public bool MinimizeToTray { get; set; } = true;
+
+    // Предупреждение при смене профиля
+    public bool ShowProfileSwitchWarning { get; set; } = true;
 }
 
 public sealed class ProfileRatingEntry

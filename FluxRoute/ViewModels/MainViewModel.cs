@@ -61,11 +61,35 @@ public partial class MainViewModel : ObservableObject
     // ── Профиль ──
     public string SelectedScriptName => SelectedProfile?.FileName ?? "—";
     [ObservableProperty] private ProfileItem? selectedProfile;
-    partial void OnSelectedProfileChanged(ProfileItem? value)
+    partial void OnSelectedProfileChanged(ProfileItem? oldValue, ProfileItem? newValue)
     {
+        if (!_suppressProfileWarning && _settingsLoaded && ShowProfileSwitchWarning
+            && oldValue is not null && newValue is not null)
+        {
+            var result = System.Windows.MessageBox.Show(
+                "Изменение профиля может повлиять на работу приложения и сетевые подключения. Продолжить?",
+                "Смена профиля",
+                System.Windows.MessageBoxButton.YesNo,
+                System.Windows.MessageBoxImage.Warning);
+
+            if (result != System.Windows.MessageBoxResult.Yes)
+            {
+                _suppressProfileWarning = true;
+                SelectedProfile = oldValue;
+                _suppressProfileWarning = false;
+                return;
+            }
+        }
+
         OnPropertyChanged(nameof(SelectedScriptName));
-        RunningScriptName = value?.FileName ?? "—";
+        RunningScriptName = newValue?.FileName ?? "—";
         SaveSettings();
+
+        if (!_suppressProfileWarning && _settingsLoaded && IsRunning && newValue is not null)
+        {
+            Stop();
+            Start();
+        }
     }
 
     // ── Статус ──
@@ -133,8 +157,46 @@ public partial class MainViewModel : ObservableObject
     // ── Сервис ──
     [ObservableProperty] private bool gameFilterEnabled;
     [ObservableProperty] private string gameFilterProtocol = "TCP и UDP";
-    partial void OnGameFilterProtocolChanged(string value) => SaveSettings();
+    partial void OnGameFilterProtocolChanged(string value)
+    {
+        SaveSettings();
+        if (GameFilterEnabled && _settingsLoaded)
+        {
+            try
+            {
+                var utilsDir = Path.GetDirectoryName(GameFilterFlagPath)!;
+                Directory.CreateDirectory(utilsDir);
+                File.WriteAllText(GameFilterFlagPath, ProtocolToFileValue(value));
+                AddServiceLog($"🎮 Game Filter протокол изменён на {value}");
+            }
+            catch (Exception ex)
+            {
+                AddServiceLog($"❌ Ошибка обновления Game Filter: {ex.Message}");
+            }
+        }
+    }
     public List<string> GameFilterProtocols { get; } = ["TCP и UDP", "TCP", "UDP"];
+
+    private static readonly Dictionary<string, string> _protocolToFile = new()
+    {
+        ["TCP и UDP"] = "all",
+        ["TCP"] = "tcp",
+        ["UDP"] = "udp"
+    };
+
+    private static readonly Dictionary<string, string> _fileToProtocol = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["all"] = "TCP и UDP",
+        ["tcp"] = "TCP",
+        ["udp"] = "UDP"
+    };
+
+    private string ProtocolToFileValue(string protocol) =>
+        _protocolToFile.TryGetValue(protocol, out var v) ? v : "udp";
+
+    private string FileValueToProtocol(string fileValue) =>
+        _fileToProtocol.TryGetValue(fileValue, out var v) ? v : "UDP";
+
     [ObservableProperty] private string ipSetMode = "—";
     [ObservableProperty] private string zapretServiceStatus = "—";
     [ObservableProperty] private bool isServiceBusy;
@@ -165,6 +227,11 @@ public partial class MainViewModel : ObservableObject
     // ── Обновления ──
     [ObservableProperty] private bool autoUpdateEnabled = false;
     partial void OnAutoUpdateEnabledChanged(bool value) => SaveSettings();
+
+    // ── Предупреждение при смене профиля ──
+    [ObservableProperty] private bool showProfileSwitchWarning = true;
+    partial void OnShowProfileSwitchWarningChanged(bool value) => SaveSettings();
+    private bool _suppressProfileWarning;
 
     // ── Системные ──
     [ObservableProperty] private bool autoStartEnabled = false;
@@ -263,6 +330,7 @@ public partial class MainViewModel : ObservableObject
         AutoStartEnabled = settings.AutoStartEnabled;
         MinimizeToTray = settings.MinimizeToTray;
         GameFilterProtocol = settings.GameFilterProtocol;
+        ShowProfileSwitchWarning = settings.ShowProfileSwitchWarning;
     }
 
     public void SaveSettings()
@@ -282,6 +350,7 @@ public partial class MainViewModel : ObservableObject
             AutoStartEnabled = AutoStartEnabled,
             MinimizeToTray = MinimizeToTray,
             GameFilterProtocol = GameFilterProtocol,
+            ShowProfileSwitchWarning = ShowProfileSwitchWarning,
             ProfileRatings = ProfileScores.Select(s => new ProfileRatingEntry
             {
                 FileName = s.FileName,
@@ -382,7 +451,13 @@ public partial class MainViewModel : ObservableObject
         await Application.Current.Dispatcher.InvokeAsync(() =>
         {
             Stop();
-            if (profile is not null) { SelectedProfile = profile; Start(); }
+            if (profile is not null)
+            {
+                _suppressProfileWarning = true;
+                SelectedProfile = profile;
+                _suppressProfileWarning = false;
+                Start();
+            }
         });
     }
 
@@ -859,8 +934,7 @@ public partial class MainViewModel : ObservableObject
             try
             {
                 var content = File.ReadAllText(GameFilterFlagPath).Trim();
-                if (GameFilterProtocols.Contains(content))
-                    GameFilterProtocol = content;
+                GameFilterProtocol = FileValueToProtocol(content);
             }
             catch { }
         }
@@ -936,7 +1010,7 @@ public partial class MainViewModel : ObservableObject
             }
             else
             {
-                File.WriteAllText(GameFilterFlagPath, GameFilterProtocol);
+                File.WriteAllText(GameFilterFlagPath, ProtocolToFileValue(GameFilterProtocol));
                 GameFilterEnabled = true;
                 AddServiceLog($"🎮 Game Filter включён ({GameFilterProtocol})");
                 Logs.Add($"Game Filter включён ({GameFilterProtocol})");

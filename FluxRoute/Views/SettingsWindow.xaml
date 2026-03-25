@@ -275,60 +275,6 @@
                 </Style>
             </TabControl.Resources>
 
-            <!-- ═══ ПРОФИЛЬ ═══ -->
-            <TabItem Header="▶ Профиль">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="18,12">
-
-                        <TextBlock Style="{StaticResource SectionHeader}" Text="АКТИВНЫЙ ПРОФИЛЬ"/>
-                        <ComboBox ItemsSource="{Binding Profiles}"
-                                  SelectedItem="{Binding SelectedProfile}"
-                                  Margin="0,0,0,12">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding DisplayName}" Foreground="White" FontSize="13"/>
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
-
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                            <Button Content="▶ Запустить" Style="{StaticResource GreenButton}"
-                                    MinWidth="120" Margin="0,0,10,0"
-                                    Command="{Binding StartCommand}"/>
-                            <Button Content="⏹ Остановить" Style="{StaticResource RedButton}"
-                                    MinWidth="120"
-                                    Command="{Binding StopCommand}"/>
-                        </StackPanel>
-
-                        <Button Content="🔄 Обновить список профилей" Style="{StaticResource DarkButton}"
-                                HorizontalAlignment="Left" Margin="0,8,0,0"
-                                Command="{Binding RefreshProfilesCommand}"/>
-
-                        <Rectangle Style="{StaticResource Sep}" Margin="0,16,0,8"/>
-
-                        <TextBlock Style="{StaticResource SectionHeader}" Text="ТЕКУЩИЙ СТАТУС"/>
-                        <Grid Margin="0,0,0,8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="120"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="28"/>
-                                <RowDefinition Height="28"/>
-                                <RowDefinition Height="28"/>
-                            </Grid.RowDefinitions>
-                            <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource Label}" Text="Статус:"/>
-                            <TextBlock Grid.Row="0" Grid.Column="1" Style="{StaticResource Value}" Text="{Binding StatusText}"/>
-                            <TextBlock Grid.Row="1" Grid.Column="0" Style="{StaticResource Label}" Text="PID:"/>
-                            <TextBlock Grid.Row="1" Grid.Column="1" Style="{StaticResource Value}" Text="{Binding PidText}"/>
-                            <TextBlock Grid.Row="2" Grid.Column="0" Style="{StaticResource Label}" Text="Uptime:"/>
-                            <TextBlock Grid.Row="2" Grid.Column="1" Style="{StaticResource Value}" Text="{Binding UptimeText}"/>
-                        </Grid>
-
-                    </StackPanel>
-                </ScrollViewer>
-            </TabItem>
-
             <!-- ═══ ОРКЕСТРАТОР ═══ -->
             <TabItem Header="🤖 Оркестратор">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -657,7 +603,10 @@
                         <TextBlock Style="{StaticResource SectionHeader}" Text="СИСТЕМНЫЕ НАСТРОЙКИ" Margin="0,0,0,8"/>
 
                         <CheckBox Content="Запускать FluxRoute при входе в Windows"
-                                  IsChecked="{Binding AutoStartEnabled}" Margin="0,4,0,12"/>
+                                  IsChecked="{Binding AutoStartEnabled}" Margin="0,4,0,4"/>
+
+                        <CheckBox Content="Показывать предупреждение при смене профиля"
+                                  IsChecked="{Binding ShowProfileSwitchWarning}" Margin="0,4,0,12"/>
 
                         <Rectangle Style="{StaticResource Sep}"/>
 
