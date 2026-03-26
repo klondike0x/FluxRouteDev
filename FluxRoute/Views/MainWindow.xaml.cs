@@ -80,9 +80,17 @@ public partial class MainWindow : Window
 
         if (!_isClosingConfirmed)
         {
-            // Показываем оверлей подтверждения вместо закрытия (✕ или Alt+F4)
             e.Cancel = true;
-            CloseOverlay.Visibility = Visibility.Visible;
+
+            if (CustomDialog.Show(
+                "Завершить работу FluxRoute?",
+                "Все активные службы (WinDivert, WinWS) будут остановлены, защита прекратит работу.",
+                "Завершить", "Отмена", isDanger: true))
+            {
+                _isClosingConfirmed = true;
+                Dispatcher.BeginInvoke(Close);
+            }
+
             return;
         }
 
@@ -109,17 +117,6 @@ public partial class MainWindow : Window
 
     private void CloseButton_Click(object sender, RoutedEventArgs e)
     {
-        CloseOverlay.Visibility = Visibility.Visible;
-    }
-
-    private void CancelClose_Click(object sender, RoutedEventArgs e)
-    {
-        CloseOverlay.Visibility = Visibility.Collapsed;
-    }
-
-    private void ConfirmClose_Click(object sender, RoutedEventArgs e)
-    {
-        _isClosingConfirmed = true;
         Close();
     }
 

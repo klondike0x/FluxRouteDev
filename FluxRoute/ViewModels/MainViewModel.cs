@@ -17,6 +17,7 @@ using FluxRoute.Core.Models;
 using FluxRoute.Core.Services;
 using FluxRoute.Services;
 using FluxRoute.Updater.Services;
+using FluxRoute.Views;
 
 namespace FluxRoute.ViewModels;
 
@@ -66,13 +67,10 @@ public partial class MainViewModel : ObservableObject
         if (!_suppressProfileWarning && _settingsLoaded && ShowProfileSwitchWarning
             && oldValue is not null && newValue is not null)
         {
-            var result = System.Windows.MessageBox.Show(
+            if (!CustomDialog.Show(
+                "⚠️ Смена профиля",
                 "Изменение профиля может повлиять на работу приложения и сетевые подключения. Продолжить?",
-                "Смена профиля",
-                System.Windows.MessageBoxButton.YesNo,
-                System.Windows.MessageBoxImage.Warning);
-
-            if (result != System.Windows.MessageBoxResult.Yes)
+                "Продолжить", "Отмена", isDanger: true))
             {
                 _suppressProfileWarning = true;
                 SelectedProfile = oldValue;
@@ -502,13 +500,10 @@ public partial class MainViewModel : ObservableObject
         {
             UpdateStatus = $"Доступна новая версия: {update.Version}";
 
-            var result = System.Windows.MessageBox.Show(
+            if (CustomDialog.Show(
+                "⬆️ Обновление доступно",
                 $"Доступно обновление Flowseal zapret!\n\nВерсия: {update.Version}\n\nОбновить сейчас?",
-                "Обновление доступно",
-                System.Windows.MessageBoxButton.YesNo,
-                System.Windows.MessageBoxImage.Information);
-
-            if (result == System.Windows.MessageBoxResult.Yes)
+                "Обновить", "Позже"))
                 _ = InstallUpdateAsync();
         });
     }
@@ -739,13 +734,10 @@ public partial class MainViewModel : ObservableObject
                     return;
                 }
 
-                var result = System.Windows.MessageBox.Show(
+                if (!CustomDialog.Show(
+                    "🔄 Принудительное обновление",
                     $"Локальная версия совпадает с последней ({latest.Version}).\n\nПринудительно переустановить Flowseal?\nЭто скачает и заменит все файлы engine/.",
-                    "Принудительное обновление",
-                    System.Windows.MessageBoxButton.YesNo,
-                    System.Windows.MessageBoxImage.Question);
-
-                if (result != System.Windows.MessageBoxResult.Yes)
+                    "Переустановить", "Отмена", isDanger: true))
                 {
                     UpdateStatus = $"✅ Актуальная версия ({CurrentEngineVersion})";
                     return;
@@ -807,20 +799,15 @@ public partial class MainViewModel : ObservableObject
 
             // Подтверждение перед первым скачиванием — прозрачность источника
             var confirmed = Application.Current.Dispatcher.Invoke(() =>
-            {
-                var result = System.Windows.MessageBox.Show(
+                CustomDialog.Show(
+                    "⬇️ Скачивание Flowseal",
                     $"Для работы FluxRoute необходим движок Flowseal (v{update.Version}).\n\n" +
                     $"Источник: официальный GitHub-репозиторий\n" +
                     $"github.com/Flowseal/zapret-discord-youtube\n\n" +
                     $"Ссылка на скачивание:\n{update.DownloadUrl}\n\n" +
                     $"Это open-source проект — исходный код доступен публично.\n" +
-                    $"После скачивания SHA-256 хеш будет отображён в логах.\n\n" +
-                    $"Скачать и установить?",
-                    "Скачивание Flowseal",
-                    System.Windows.MessageBoxButton.YesNo,
-                    System.Windows.MessageBoxImage.Question);
-                return result == System.Windows.MessageBoxResult.Yes;
-            });
+                    $"После скачивания SHA-256 хеш будет отображён в логах.",
+                    "Скачать", "Отмена"));
 
             if (!confirmed)
             {
@@ -1205,13 +1192,10 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void ForceStopZapretService()
     {
-        var result = System.Windows.MessageBox.Show(
+        if (!CustomDialog.Show(
+            "⚠️ Подтверждение остановки",
             "Вы действительно хотите принудительно остановить службу zapret?\n\nВсе активные соединения через zapret будут прерваны.",
-            "Подтверждение остановки",
-            System.Windows.MessageBoxButton.YesNo,
-            System.Windows.MessageBoxImage.Warning);
-
-        if (result != System.Windows.MessageBoxResult.Yes) return;
+            "Остановить", "Отмена", isDanger: true)) return;
 
         AddServiceLog("⏹ Принудительная остановка службы zapret...");
 
