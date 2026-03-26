@@ -112,16 +112,20 @@ dotnet build
 
 ---
 
-## 🙏 Благодарности
+## Основа engine
 
-Отдельное спасибо авторам проектов, которые вдохновили на создание FluxRoute Desktop:
+FluxRoute использует экосистему проектов в такой цепочке:
 
-- [**Zapret-GUI**](https://github.com/medvedeff-true/Zapret-GUI) by medvedeff-true
-- [**ZapretControl**](https://github.com/Virenbar/ZapretControl) by Virenbar
-- [**zapret**](https://github.com/youtubediscord/zapret) by youtubediscord
-- [**zapret**](https://github.com/bol-van/zapret) by bol-van — оригинальный zapret, основа всего
-- [**WinSW**](https://github.com/winsw/winsw) by winsw — запуск приложений как Windows-служб
-- [**zapret-discord-youtube**](https://github.com/Flowseal/zapret-discord-youtube) by Flowseal — основа engine
+- [WinDivert](https://github.com/basil00/WinDivert) — низкоуровневая основа для Windows
+- [bol-van/zapret](https://github.com/bol-van/zapret) — оригинальный проект
+- [bol-van/zapret-win-bundle](https://github.com/bol-van/zapret-win-bundle) — Windows-бандл с winws.exe
+- [Flowseal/zapret-discord-youtube](https://github.com/Flowseal/zapret-discord-youtube) — непосредственная основа engine, используемая в FluxRoute
+
+## Вдохновение
+
+- [medvedeff-true/Zapret-GUI](https://github.com/medvedeff-true/Zapret-GUI)
+- [Virenbar/ZapretControl](https://github.com/Virenbar/ZapretControl)
+- [youtubediscord/zapret](https://github.com/youtubediscord/zapret)
 
 ---
 
