@@ -2,7 +2,8 @@
 
 <p align="center">
     <picture>
-        <img width="750" alt="FluxRoute" src="https://github.com/user-attachments/assets/57b5f5a8-a36e-4fe0-805d-6a2c77955368" />
+        <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/klondike0x/FluxRoute/master/FluxRoute-dark.svg">
+        <img width="750" alt="FluxRoute" src="https://raw.githubusercontent.com/klondike0x/FluxRoute/master/FluxRoute-white.svg" />
     </picture>
 </p>
 
